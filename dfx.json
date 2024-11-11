@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "fuel-dao-nft-rs-backend": {
+      "candid": "src/fuel-dao-nft-rs-backend/fuel-dao-nft-rs-backend.did",
+      "package": "fuel-dao-nft-rs-backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

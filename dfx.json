@@ -1,9 +1,44 @@
 {
   "canisters": {
-    "fuel-dao-nft-rs-backend": {
-      "candid": "src/fuel-dao-nft-rs-backend/fuel-dao-nft-rs-backend.did",
-      "package": "fuel-dao-nft-rs-backend",
+    "fueldao": {
+      "candid": "src/fueldao/can.did",
+      "package": "fueldao",
       "type": "rust"
+    },
+    "provision": {
+      "candid": "src/provision/can.did",
+      "package": "provision",
+      "type": "rust"
+    },
+    "asset": {
+      "type": "custom",
+      "candid": "wasm/asset/can.did",
+      "wasm": "wasm/asset/assetstorage.wasm.gz"
+    },
+    "token": {
+      "type": "custom",
+      "candid": "wasm/token/can.did",
+      "wasm": "wasm/token/token.wasm.gz"
+    },
+    "icp_index_canister": {
+      "type": "custom",
+      "candid": "https://raw.githubusercontent.com/dfinity/ic/d87954601e4b22972899e9957e800406a0a6b929/rs/rosetta-api/icp_ledger/index/index.did",
+      "wasm": "https://download.dfinity.systems/ic/d87954601e4b22972899e9957e800406a0a6b929/canisters/ic-icp-index-canister.wasm.gz",
+        "remote": {
+        "id": {
+          "ic": "qhbym-qaaaa-aaaaa-aaafq-cai"
+        }
+      }
+    },
+    "icp_ledger_canister": {
+      "type": "custom",
+      "candid": "https://raw.githubusercontent.com/dfinity/ic/d87954601e4b22972899e9957e800406a0a6b929/rs/rosetta-api/icp_ledger/ledger.did",
+      "wasm": "https://download.dfinity.systems/ic/d87954601e4b22972899e9957e800406a0a6b929/canisters/ledger-canister.wasm.gz",
+      "remote": {
+        "id": {
+          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        }
+      }
     }
   },
   "defaults": {

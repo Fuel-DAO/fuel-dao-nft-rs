@@ -17,13 +17,15 @@ pub struct State {
 
 }
 
-#[derive(CandidType, Deserialize, Serialize, Clone, Debug, Default)]
-pub struct CanisterIds {
-
+#[ic_cdk_macros::update (guard = "is_controller") ]
+fn add_token_wasm(wasm: Vec<u8>) -> bool {
+    STATE.with(|state| state.borrow_mut().token_wasm = Some(wasm) );
+    true
 }
 
 #[ic_cdk_macros::update (guard = "is_controller") ]
-fn add_token_wasm(wasm: Vec<u8>) -> bool {
+fn include_wasm() -> bool {
+    let wasm = include_bytes!("../../../wasm/token/token.wasm.gz").to_vec();
     STATE.with(|state| state.borrow_mut().token_wasm = Some(wasm) );
     true
 }

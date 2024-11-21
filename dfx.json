@@ -5,20 +5,25 @@
       "package": "fueldao",
       "type": "rust"
     },
+    "asset_proxy": {
+      "candid": "src/asset_proxy/can.did",
+      "package": "asset_proxy",
+      "type": "rust"
+    },
     "provision": {
       "candid": "src/provision/can.did",
       "package": "provision",
+      "type": "rust"
+    },
+    "token": {
+      "candid": "src/token/can.did",
+      "package": "token",
       "type": "rust"
     },
     "asset": {
       "type": "custom",
       "candid": "wasm/asset/can.did",
       "wasm": "wasm/asset/assetstorage.wasm.gz"
-    },
-    "token": {
-      "type": "custom",
-      "candid": "wasm/token/can.did",
-      "wasm": "wasm/token/token.wasm.gz"
     },
     "icp_index_canister": {
       "type": "custom",

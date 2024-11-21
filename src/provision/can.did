@@ -51,6 +51,7 @@ service : () -> {
   get_pending_requests : () -> (vec nat64) query;
   get_request_info : (nat64) -> (opt CollectionRequest) query;
   get_token_wasm : () -> (opt blob) query;
+  include_wasm : () -> (bool);
   is_admin : (opt principal) -> (bool) query;
   list_collections : () -> (vec ListCollection) query;
   reject_request : (nat64) -> (Result_2);

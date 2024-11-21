@@ -12,7 +12,7 @@ pub struct  CollectionRequestConfig {
 
 #[derive(CandidType, Deserialize, Serialize, Debug, Clone)]
 pub struct CollectionConfig {
-    collection_owner: Principal,
+    pub collection_owner: Principal,
     pub approval_status: ConfigStatus,
     pub token_canister: Option<Principal>,
     pub asset_canister: Option<Principal>,

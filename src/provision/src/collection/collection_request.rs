@@ -1,7 +1,7 @@
 use candid::{CandidType, Principal};
 use serde::{Deserialize, Serialize};
 
-use crate::{admin::admin::is_controller, asset_permission::{grant_asset_edit_perms, revoke_asset_edit_perms},  STATE};
+use crate::{admin::admin::is_controller, asset_permission::{approve_files_from_proxy, grant_asset_edit_perms, revoke_asset_edit_perms}, token::deploy_token, STATE};
 
 use super::{CollectionConfig, CollectionRequestConfig, ConfigStatus};
 use crate::canisters::delete_canister::delete_canister;
@@ -275,18 +275,28 @@ let collection  =match  state.collection_requests.get_mut(&id) {
   None => return  Err("Invalid collection Request".into())
   
 } ;
- let wasm= match state.asset_wasm {
-    Some(wasm) =>wasm,
-    None => return Err("Asset wasm not set".into()),
-} ;
 
-let deploy_asset_result = crate::canisters::assets::deploy_asset(wasm).await?;
+  let wasm = include_bytes!("../../../../wasm/asset/assetstorage.wasm.gz");
+
+//  let wasm= match state.asset_wasm {
+//     Some(wasm) =>wasm,
+//     None => return Err("Asset wasm not set".into()),
+// } ;
+
+let deploy_asset_result = match collection.config.asset_canister {
+  Some(p) => p, 
+  None => crate::canisters::assets::deploy_asset(wasm.to_vec()).await?
+};
+
+collection.config.asset_canister = Some(deploy_asset_result);
 
 // Step 3: Deploy the asset canister
 let asset_canister_id = deploy_asset_result;
 
+let asset_proxy_canister = state.asset_proxy_canister.ok_or( String::from("Asset Proxy canister not set"))?;
+
 // // Step 4: Grant proxy permissions ///TODO:// Use
-grant_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(Principal::anonymous()))
+grant_asset_edit_perms(asset_canister_id, asset_proxy_canister)
 .await?;
 
   let request =  collection.request.clone();
@@ -308,33 +318,43 @@ grant_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(P
 
 
   // // Step 6: TODO:// Approve the files
-  // approve_files_from_proxy(asset_canister_id, &approved_files)
-  //     .await
-  //     .map_err(|err| ApproveError::ApproveFilesError(err))?;
+  // Commented because crashing
+  // approve_files_from_proxy(asset_canister_id, approved_files, asset_proxy_canister)
+  //     .await?;
 
   // // Step 7: Revoke proxy permissions
-  revoke_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(Principal::anonymous()))
-      .await?;
+  // revoke_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(Principal::anonymous()))
+  //     .await?;
 
-    Ok(deploy_asset_result)
 
   // // Step 8: Deploy the token canister
-  // let mut token_metadata = request_metadata.clone();
-  // token_metadata.collection_owner = request_config.collection_owner.clone();
-  // token_metadata.asset_canister = Some(asset_canister_id);
+  let collection_owner = collection.config.collection_owner.clone();
+  let asset_canister = asset_canister_id;
+  let  mut token_metadata = request.clone().into_metadata(collection_owner, asset_canister);
 
-  // if !request_metadata.logo.is_empty() {
-  //     token_metadata.logo = Some(format!(
-  //         "https://{}.icp0.io{}",
-  //         asset_canister_id.to_string(),
-  //         request_metadata.logo
-  //     ));
-  // }
 
-  // let deploy_token_result = deploy_token(token_metadata)
-  //     .await
-  //     .map_err(|err| ApproveError::DeployTokenError(err))?;
-  // let token_canister_id = deploy_token_result;
+  if !request.logo.is_empty() {
+      token_metadata.logo = format!(
+        "https://{}.icp0.io{}",
+        asset_canister_id.to_string(),
+        request.logo
+    );
+  }
+
+  let wasm = include_bytes!("../../../../wasm/token/token.wasm.gz").to_vec();
+
+
+  let deploy_token_result = deploy_token(wasm, token_metadata)
+      .await
+      ?;
+
+  let token_canister_id = deploy_token_result;
+
+  collection.config.token_canister = Some(token_canister_id);
+
+  collection.config.approval_status = ConfigStatus::Approved;
+
+  Ok(deploy_asset_result)
 
   // // Step 9: Grant admin and edit permissions
   // grant_asset_admin_perms(asset_canister_id, token_canister_id)

@@ -1,6 +1,6 @@
 use ic_cdk::api::management_canister::{
             main::{
-                create_canister, install_code, CreateCanisterArgument, InstallCodeArgument
+                create_canister, install_code, CreateCanisterArgument,  InstallCodeArgument
             },
             provisional::CanisterSettings,
         }

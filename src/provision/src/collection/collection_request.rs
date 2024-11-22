@@ -288,6 +288,7 @@ let deploy_asset_result = match collection.config.asset_canister {
   None => crate::canisters::assets::deploy_asset(wasm.to_vec()).await?
 };
 
+
 collection.config.asset_canister = Some(deploy_asset_result);
 
 // Step 3: Deploy the asset canister
@@ -319,12 +320,12 @@ grant_asset_edit_perms(asset_canister_id, asset_proxy_canister)
 
   // // Step 6: TODO:// Approve the files
   // Commented because crashing
-  // approve_files_from_proxy(asset_canister_id, approved_files, asset_proxy_canister)
-  //     .await?;
+  approve_files_from_proxy(asset_canister_id, approved_files, asset_proxy_canister)
+      .await?;
 
   // // Step 7: Revoke proxy permissions
-  // revoke_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(Principal::anonymous()))
-  //     .await?;
+  revoke_asset_edit_perms(asset_canister_id, state.asset_proxy_canister.unwrap_or(Principal::anonymous()))
+      .await?;
 
 
   // // Step 8: Deploy the token canister

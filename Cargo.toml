@@ -1,7 +1,7 @@
 [workspace]
 members = [ "src/asset_proxy",
     "src/fueldao"
-, "src/provision", "src/shared_utils", "src/token"]
+, "src/provision", "src/token"]
 resolver = "2"
 
 

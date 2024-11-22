@@ -74,6 +74,7 @@ async fn approve_files(arg: ApproveFilesArg) -> Result<bool, String> {
     let asset_canister = arg.asset_canister;
     let temp_asset_canister = get_temp_asset_canister().ok_or("Temp asset canister not yet set".to_string())?;
 
+    ic_cdk::println!("Approve files {:?} {:?}", temp_asset_canister.to_text(), arg);
 
     // Process files
     for file in &arg.files {
@@ -81,7 +82,7 @@ async fn approve_files(arg: ApproveFilesArg) -> Result<bool, String> {
         let (file_data,) :(GetAssetResponse, ) = call(
             temp_asset_canister,
             "get",
-            (GetAssetArg {
+            (&GetAssetArg {
                 key: file.clone(),
                 accept_encodings: vec![
                     "identity".to_string(),

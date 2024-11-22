@@ -10,4 +10,8 @@ crate-type = ["cdylib"]
 candid = "0.10"
 ic-cdk = "0.16"
 ic-cdk-macros = "0.16.0"
+ic-ledger-types = "0.14.0"
 serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "*"
+hex = "0.4.3"
+sha2 = "0.10.8"

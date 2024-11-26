@@ -3,48 +3,48 @@ use candid::{CandidType, Nat};
 use crate::STATE;
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_max_query_batch_size() -> Option<Nat> {
+pub fn icrc7_max_query_batch_size() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_max_update_batch_size() -> Option<Nat> {
+pub fn icrc7_max_update_batch_size() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_max_default_take_value() -> Option<Nat> {
+pub fn icrc7_max_default_take_value() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_max_take_value() -> Option<Nat> {
+pub fn icrc7_max_take_value() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_max_memo_size() -> Option<Nat> {
+pub fn icrc7_max_memo_size() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_atomic_batch_transfers() -> Option<bool> {
+pub fn icrc7_atomic_batch_transfers() -> Option<bool> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_tx_window() -> Option<Nat> {
+pub fn icrc7_tx_window() -> Option<Nat> {
     None
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_permitted_drift() -> Option<Nat> {
+pub fn icrc7_permitted_drift() -> Option<Nat> {
     None
 }
 
 // Functions
 #[ic_cdk_macros::query]
-pub fn icrc_7_symbol() -> String {
+pub fn icrc7_symbol() -> String {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -56,7 +56,7 @@ pub fn icrc_7_symbol() -> String {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_name() -> String {
+pub fn icrc7_name() -> String {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -68,7 +68,7 @@ pub fn icrc_7_name() -> String {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_description() -> Option<String> {
+pub fn icrc7_description() -> Option<String> {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -80,7 +80,7 @@ pub fn icrc_7_description() -> Option<String> {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_logo() -> Option<String> {
+pub fn icrc7_logo() -> Option<String> {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -92,7 +92,7 @@ pub fn icrc_7_logo() -> Option<String> {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_total_supply() -> Nat {
+pub fn icrc7_total_supply() -> Nat {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -103,7 +103,7 @@ pub fn icrc_7_total_supply() -> Nat {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_supply_cap() -> Option<Nat> {
+pub fn icrc7_supply_cap() -> Option<Nat> {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {
@@ -124,7 +124,7 @@ pub enum MetadataValue {
 }
 
 #[ic_cdk_macros::query]
-pub fn icrc_7_collection_metadata() -> ICRC7MetadataQueryResult {
+pub fn icrc7_collection_metadata() -> ICRC7MetadataQueryResult {
     STATE.with(|store| {
         let metadata = store.borrow().metadata.clone();
         if metadata.is_none() {

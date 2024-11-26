@@ -166,8 +166,21 @@ service : (Metadata) -> {
   get_participating_investors : () -> (vec principal) query;
   get_sale_status : () -> (SaleStatus) query;
   get_total_booked_tokens : () -> (nat) query;
+  icrc7_atomic_batch_transfers : () -> (opt bool) query;
   icrc7_balance_of : (vec Icrc7BalanceOfArgItem) -> (vec nat64) query;
+  icrc7_collection_metadata : () -> (vec record { text; MetadataValue }) query;
+  icrc7_description : () -> (opt text) query;
+  icrc7_logo : () -> (opt text) query;
+  icrc7_max_default_take_value : () -> (opt nat) query;
+  icrc7_max_memo_size : () -> (opt nat) query;
+  icrc7_max_query_batch_size : () -> (opt nat) query;
+  icrc7_max_take_value : () -> (opt nat) query;
+  icrc7_max_update_batch_size : () -> (opt nat) query;
+  icrc7_name : () -> (text) query;
   icrc7_owner_of : (vec nat32) -> (vec opt Icrc7OwnerOfRetItemInner) query;
+  icrc7_permitted_drift : () -> (opt nat) query;
+  icrc7_supply_cap : () -> (opt nat) query;
+  icrc7_symbol : () -> (text) query;
   icrc7_token_metadata : (vec nat32) -> (
       vec opt vec record { text; Icrc7TokenMetadataRetItemInnerItem1 },
     ) query;
@@ -175,23 +188,10 @@ service : (Metadata) -> {
   icrc7_tokens_of : (Icrc7TokensOfArg, opt nat32, opt nat32) -> (
       vec nat32,
     ) query;
+  icrc7_total_supply : () -> (nat) query;
   icrc7_transfer : (vec Icrc7TransferArgItem) -> (
       vec opt Icrc7TransferRetItemInner,
     );
-  icrc_7_atomic_batch_transfers : () -> (opt bool) query;
-  icrc_7_collection_metadata : () -> (vec record { text; MetadataValue }) query;
-  icrc_7_description : () -> (opt text) query;
-  icrc_7_logo : () -> (opt text) query;
-  icrc_7_max_default_take_value : () -> (opt nat) query;
-  icrc_7_max_memo_size : () -> (opt nat) query;
-  icrc_7_max_query_batch_size : () -> (opt nat) query;
-  icrc_7_max_take_value : () -> (opt nat) query;
-  icrc_7_max_update_batch_size : () -> (opt nat) query;
-  icrc_7_name : () -> (text) query;
-  icrc_7_permitted_drift : () -> (opt nat) query;
-  icrc_7_supply_cap : () -> (opt nat) query;
-  icrc_7_symbol : () -> (text) query;
-  icrc_7_total_supply : () -> (nat) query;
-  icrc_7_tx_window : () -> (opt nat) query;
+  icrc7_tx_window : () -> (opt nat) query;
   update_metadata : (UpdateMetadataArgs) -> (Result_1);
 }

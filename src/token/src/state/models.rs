@@ -1,8 +1,8 @@
 // This is an experimental feature to generate Rust binding from Candid.
 // You may want to manually adjust some of the types.
 #![allow(dead_code, unused_imports)]
-use candid::{self, CandidType, Deserialize,  Principal, Encode, Decode};
-use ic_cdk::api::call::CallResult as Result;
+use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
+use ic_cdk::api::call::CallResult as CallResult;
 use serde::Serialize;
 
 
@@ -129,7 +129,7 @@ pub struct Icrc7BalanceOfArgItem {
 pub enum Icrc7CollectionMetadataRetItem1MapItem1 {
   Int(candid::Int),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
 }
 
@@ -137,7 +137,7 @@ pub enum Icrc7CollectionMetadataRetItem1MapItem1 {
 pub enum Icrc7CollectionMetadataRetItem1ArrayItem {
   Int(candid::Int),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
 }
 
@@ -146,7 +146,7 @@ pub enum Icrc7CollectionMetadataRetItem1 {
   Int(candid::Int),
   Map(Vec<(String,Icrc7CollectionMetadataRetItem1MapItem1,)>),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
   Array(Vec<Icrc7CollectionMetadataRetItem1ArrayItem>),
 }
@@ -154,14 +154,14 @@ pub enum Icrc7CollectionMetadataRetItem1 {
 #[derive(CandidType, Deserialize, Clone)]
 pub struct Icrc7OwnerOfRetItemInner {
   pub owner: Principal,
-  pub subaccount: Option<serde_bytes::ByteBuf>,
+  pub subaccount: Option<Vec<u8>>,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 pub enum Icrc7TokenMetadataRetItemInnerItem1MapItem1 {
   Int(candid::Int),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
 }
 
@@ -169,7 +169,7 @@ pub enum Icrc7TokenMetadataRetItemInnerItem1MapItem1 {
 pub enum Icrc7TokenMetadataRetItemInnerItem1ArrayItem {
   Int(candid::Int),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
 }
 
@@ -178,7 +178,7 @@ pub enum Icrc7TokenMetadataRetItemInnerItem1 {
   Int(candid::Int),
   Map(Vec<(String,Icrc7TokenMetadataRetItemInnerItem1MapItem1,)>),
   Nat(candid::Nat),
-  Blob(serde_bytes::ByteBuf),
+  Blob(Vec<u8>),
   Text(String),
   Array(Vec<Icrc7TokenMetadataRetItemInnerItem1ArrayItem>),
 }
@@ -186,21 +186,21 @@ pub enum Icrc7TokenMetadataRetItemInnerItem1 {
 #[derive(CandidType, Deserialize, Clone)]
 pub struct Icrc7TokensOfArg {
   pub owner: Principal,
-  pub subaccount: Option<serde_bytes::ByteBuf>,
+  pub subaccount: Option<Vec<u8>>,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct Icrc7TransferArgItemTo {
   pub owner: Principal,
-  pub subaccount: Option<serde_bytes::ByteBuf>,
+  pub subaccount: Option<Vec<u8>>,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
 pub struct Icrc7TransferArgItem {
   pub to: Icrc7TransferArgItemTo,
-  pub token_id: candid::Nat,
-  pub memo: Option<serde_bytes::ByteBuf>,
-  pub from_subaccount: Option<serde_bytes::ByteBuf>,
+  pub token_id: u32,
+  pub memo: Option<Vec<u8>>,
+  pub from_subaccount: Option<Vec<u8>>,
   pub created_at_time: Option<u64>,
 }
 
@@ -217,8 +217,18 @@ pub enum Icrc7TransferRetItemInnerErr {
 }
 
 #[derive(CandidType, Deserialize, Clone)]
+pub  struct TransferArgs {
+ pub to: Icrc1Account,
+ pub from_subaccount: Option<Vec<u8>>,
+ pub fee: Option<u64>,
+ pub memo: Option<String>,
+ pub created_at_time: Option<u64>,
+ pub amount: u64,
+}
+
+#[derive(CandidType, Deserialize, Clone)]
 pub enum Icrc7TransferRetItemInner {
-  Ok(candid::Nat),
+  Ok(u32),
   Err(Icrc7TransferRetItemInnerErr),
 }
 

@@ -1,4 +1,4 @@
-use candid::{CandidType, Deserialize, Nat, Principal};
+use candid::{CandidType, Deserialize,  Principal};
 use ic_cdk::api::call::call;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -29,7 +29,7 @@ pub struct EscrowStore {
 
 impl EscrowStore {
     /// Creates a new EscrowStore with default values
-    pub fn new() -> Self {
+    pub fn default() -> Self {
         Self {
             sale_status: SaleStatus::default(),
             booked_tokens: HashMap::new(),
@@ -83,5 +83,12 @@ impl EscrowStore {
                 Err((e, err_msg)) => Err(format!("Failed to grant permission: {e:?} {}", err_msg)),
             }
     }
+}
 
+
+
+#[derive(CandidType, Deserialize,)]
+pub struct RefundResult {
+    pub to: String,
+    pub amount: u64,
 }

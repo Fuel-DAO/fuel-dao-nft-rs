@@ -1,7 +1,8 @@
 use candid::{Nat, Principal};
 use ic_cdk::caller;
+use crate::state::metadata::UpdateMetadataArgs;
 use crate::validations::{check_collection_owner,check_not_anonymous};
-use crate::BookTokensArg;
+use crate::{BookTokensArg, Icrc7BalanceOfArgItem, Icrc7OwnerOfRetItemInner, Icrc7TokenMetadataRetItemInnerItem1, Icrc7TokensOfArg, Icrc7TransferArgItem, Icrc7TransferRetItemInner};
 use crate::{state::{escrow::SaleStatus, models::{GetEscrowAccountRet, GetMetadataRet}}, STATE};
 use ic_cdk_macros::*;
 
@@ -10,6 +11,10 @@ use ic_cdk_macros::*;
 pub async fn change_ownership( arg0: Principal) -> Result<Nat, String> {
     let   f  =  STATE.with_borrow_mut( |f|  f.clone() );
     f.change_ownership(arg0).await 
+}
+#[update(guard = "check_collection_owner")]
+pub async fn update_metadata( arg0: UpdateMetadataArgs) -> Result<Nat, String> {
+    STATE.with_borrow_mut( |f|{  f.metadata.as_mut().map(|f| f.metadata.update(arg0)); Ok(f.transactions.index().clone()) } )
 }
 
 
@@ -22,11 +27,47 @@ pub async fn book_tokens( arg: BookTokensArg) -> Result<bool, String> {
     STATE.with(|f|{  f.borrow_mut().escrow.book_tokens(caller(), qunatity.into());  } );
     Ok(res)
 }
+#[update(guard = "check_collection_owner")]
+pub async fn accept_sale() -> Result<bool, String> {
+    let    f  =  STATE.with( |f|  f.clone() );
+    let x = f.borrow().accept_sale().await; x
+}
 
 #[query]
 pub async fn get_booked_tokens( arg0: Option<Principal>) -> u128 {
     STATE.with( |f|  f.borrow().clone() )
     .get_booked_tokens(arg0).await 
+}
+
+#[update]
+pub fn icrc7_transfer( args: Vec<Icrc7TransferArgItem>) -> Vec<Option<Icrc7TransferRetItemInner>>  {
+    STATE.with( |f|  f.borrow_mut().icrc_7_transfer(args) )
+}
+
+#[query]
+pub fn icrc7_balance_of( args: Vec<Icrc7BalanceOfArgItem>) -> Vec<u64>  {
+    STATE.with( |f|  f.borrow().icrc_7_balance_of(args) )
+}
+#[query]
+pub fn icrc7_owner_of( args: Vec<u32>) -> Vec<Option<Icrc7OwnerOfRetItemInner>>  {
+    STATE.with( |f|  f.borrow().icrc_7_owner_of(args) )
+}
+
+#[query]
+pub fn icrc7_token_metadata( args: Vec<u32>) -> Vec<Option<Vec<(String, Icrc7TokenMetadataRetItemInnerItem1)>>>  {
+    STATE.with( |f|  f.borrow().icrc_7_token_metadata(args) )
+}
+
+#[query]
+pub fn icrc7_tokens(  prev: Option<u32>,
+    take: Option<u32>,) -> Vec<u32>  {
+    STATE.with( |f|  f.borrow().icrc_7_tokens(prev, take) )
+}
+#[query]
+pub fn icrc7_tokens_of(   account: Icrc7TokensOfArg,
+    prev: Option<u32>,
+    take: Option<u32>,) -> Vec<u32>  {
+    STATE.with( |f|  f.borrow().icrc_7_tokens_of(account,prev, take) )
 }
 
 

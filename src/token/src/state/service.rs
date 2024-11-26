@@ -1,17 +1,64 @@
 #![allow(dead_code, unused_imports)]
+use crate::{state::Owner, STATE};
+
 use super::{
     account_identifier::AccountIdentifier,
     escrow::{EscrowStore, SaleStatus},
     models::*,
     subaccount::SubAccount,
-    State,
+    State, TokenState,
 };
 use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_cdk::{api::call::CallResult, caller};
-
 impl State {
-    pub async fn accept_sale(&self) -> CallResult<(AcceptSaleRet,)> {
-        ic_cdk::call(Principal::anonymous(), "accept_sale", ()).await
+    pub async fn accept_sale(&self) -> Result<bool, String> {
+        
+        // Check if the sale is live
+        let escrow_store = self.escrow.clone();
+        if escrow_store.sale_status != SaleStatus::Live {
+            return Err("Sale not live.".to_string());
+        }
+    
+        // Accept the sale
+        STATE.with_borrow_mut(|F| F.escrow.accept_sale());
+    
+        // Retrieve treasury, ledger, and booked tokens
+        let metadata = self.metadata.clone().map(|f| f.metadata);
+        if metadata.is_none() {
+            return  Err("Metadata not set".into());
+        }
+        let metadata = metadata.unwrap();
+        let treasury = metadata.treasury;
+        let ledger = metadata.token;
+        let booked_tokens = escrow_store.get_booked_tokens();
+    
+        for (investor, quantity) in booked_tokens.iter() {
+            let escrow_subaccount =  SubAccount::derive_subaccount(&investor.clone());
+            let user_invested_amount = quantity.clone() as f64 * metadata.price.clone();
+    
+            // Transfer funds to treasury
+            const TRANSFER_FEE: u64 = 10_000;
+            let (_transfer_result,): (u64,) = ic_cdk::call(ledger, "icrc1_transfer", (TransferArgs {
+                to: Icrc1Account {
+                    owner: treasury,
+                    subaccount: None,
+                },
+                from_subaccount: Some(escrow_subaccount.bytes.to_vec()),
+                fee: Some(TRANSFER_FEE.clone()),
+                memo: None,
+                created_at_time: None,
+                amount: user_invested_amount  as u64,
+            },)).await.map_err(|err| format!("Transfer failed: {:?}", err))? ;
+    
+    
+            // Mint tokens for the investor
+            for _ in 0..quantity.clone() {
+                STATE.with_borrow_mut(|F|F.tokens.mint(*investor, Some(SubAccount::derive_subaccount(investor).bytes.to_vec())));
+            }
+        }
+    
+        Ok(true)
+
     }
     pub async fn accept_sale_individual(
         &self,
@@ -146,15 +193,20 @@ impl State {
     ) -> CallResult<(Vec<Icrc61SupportedStandardsRetItem>,)> {
         ic_cdk::call(Principal::anonymous(), "icrc61_supported_standards", ()).await
     }
-    pub async fn icrc_7_atomic_batch_transfers(&self) -> CallResult<(Option<bool>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_atomic_batch_transfers", ()).await
-    }
-    pub async fn icrc_7_balance_of(
+
+    pub fn icrc_7_balance_of(
         &self,
         arg0: Vec<Icrc7BalanceOfArgItem>,
-    ) -> CallResult<(Vec<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_balance_of", (arg0,)).await
+    ) -> Vec<u64> {
+        arg0
+            .iter()
+            .map(|account| {
+                let account_id = TokenState::to_account_id(account.owner.to_text().as_str(), &Some(account.subaccount.clone()));
+                self.tokens.owner_to_token_index.get(&account_id).map_or(0, |tokens| tokens.len() as u64)
+            })
+            .collect()
     }
+
     pub async fn icrc_7_collection_metadata(
         &self,
     ) -> CallResult<(Vec<(String, Icrc7CollectionMetadataRetItem1)>,)> {
@@ -184,11 +236,20 @@ impl State {
     pub async fn icrc_7_name(&self) -> CallResult<(String,)> {
         ic_cdk::call(Principal::anonymous(), "icrc7_name", ()).await
     }
-    pub async fn icrc_7_owner_of(
+    pub fn icrc_7_owner_of(
         &self,
-        arg0: Vec<candid::Nat>,
-    ) -> CallResult<(Vec<Option<Icrc7OwnerOfRetItemInner>>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_owner_of", (arg0,)).await
+        arg0: Vec<u32>,
+    ) -> Vec<Option<Icrc7OwnerOfRetItemInner>> {
+        arg0
+        .into_iter()
+        .map(|id| self.tokens.tokens.get(&id)) // Get the token by ID
+        .map(|token| {
+            token.map(|token| Icrc7OwnerOfRetItemInner {
+                owner: token.owner.principal.clone(),
+                subaccount: token.owner.subaccount.clone(),
+            })
+        })
+        .collect()
     }
     pub async fn icrc_7_permitted_drift(&self) -> CallResult<(Option<candid::Nat>,)> {
         ic_cdk::call(Principal::anonymous(), "icrc7_permitted_drift", ()).await
@@ -199,40 +260,136 @@ impl State {
     pub async fn icrc_7_symbol(&self) -> CallResult<(String,)> {
         ic_cdk::call(Principal::anonymous(), "icrc7_symbol", ()).await
     }
-    pub async fn icrc_7_token_metadata(
+    pub fn icrc_7_token_metadata(
         &self,
-        arg0: Vec<candid::Nat>,
-    ) -> CallResult<(Vec<Option<Vec<(String, Icrc7TokenMetadataRetItemInnerItem1)>>>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_token_metadata", (arg0,)).await
+        arg0: Vec<u32>,
+    ) -> Vec<Option<Vec<(String, Icrc7TokenMetadataRetItemInnerItem1)>>> {
+        arg0
+        .iter()
+        .map(|id| {
+            if self.tokens.tokens.contains_key(id) {
+                Some(vec![]) // MetadataResult is empty for existing tokens
+            } else {
+                None // Return None for non-existing tokens
+            }
+        })
+        .collect()
     }
-    pub async fn icrc_7_tokens(
+    pub fn icrc_7_tokens(
         &self,
-        arg0: Option<candid::Nat>,
-        arg1: Option<candid::Nat>,
-    ) -> CallResult<(Vec<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_tokens", (arg0, arg1)).await
+        prev: Option<u32>,
+        take: Option<u32>,
+    ) -> Vec<u32> {
+        let mut tokens: Vec<_> = self.tokens.tokens.keys().cloned().collect();
+        tokens.sort();
+
+        // Convert `prev` to the starting token ID or 0
+        let prev_id = prev.unwrap_or(0);
+
+        // Find the index of the `prev_id` in the sorted token list
+        let prev_index = if prev_id == 0 {
+            -1
+        } else {
+            tokens.iter().position(|&id| id == prev_id).map_or(-1, |idx| idx as isize)
+        };
+
+        // Determine the number of tokens to take (default to 5 if `take` is not provided)
+        let take_count = take.unwrap_or(5) as usize;
+
+        // Slice the tokens based on the computed index and take count
+        tokens
+            .into_iter()
+            .skip((prev_index + 1) as usize)
+            .take(take_count)
+            .collect()
     }
-    pub async fn icrc_7_tokens_of(
+    pub  fn icrc_7_tokens_of(
         &self,
-        arg0: Icrc7TokensOfArg,
-        arg1: Option<candid::Nat>,
-        arg2: Option<candid::Nat>,
-    ) -> CallResult<(Vec<candid::Nat>,)> {
-        ic_cdk::call(
-            Principal::anonymous(),
-            "icrc7_tokens_of",
-            (arg0, arg1, arg2),
-        )
-        .await
+        account: Icrc7TokensOfArg,
+        prev: Option<u32>,
+        take: Option<u32>,
+    ) -> Vec<u32> {
+        let account_id = TokenState::to_account_id(&account.owner.to_text(), &account.subaccount);
+
+        // Get the tokens associated with the account ID
+        let tokens: Vec<u32> = self
+            .tokens
+            .owner_to_token_index
+            .get(&account_id)
+            .map_or_else(Vec::new, |set| {
+                let mut vec: Vec<u32> =  set.keys().cloned().collect();
+                vec.sort(); // Ensure tokens are sorted
+                vec
+            });
+
+        // Convert `prev` to the starting token ID or 0
+        let prev_id = prev.unwrap_or(0);
+
+        // Find the index of the `prev_id` in the sorted token list
+        let prev_index = if prev_id == 0 {
+            -1
+        } else {
+            tokens.iter().position(|&id| id == prev_id ).map_or(-1, |idx| idx as isize)
+        };
+
+        // Determine the number of tokens to take (default to 5 if `take` is not provided)
+        let take_count = take.unwrap_or(5) as usize;
+
+        // Slice the tokens based on the computed index and take count
+        tokens
+            .into_iter()
+            .skip((prev_index + 1) as usize)
+            .take(take_count)
+            .collect()
     }
     pub async fn icrc_7_total_supply(&self) -> CallResult<(candid::Nat,)> {
         ic_cdk::call(Principal::anonymous(), "icrc7_total_supply", ()).await
     }
-    pub async fn icrc_7_transfer(
-        &self,
-        arg0: Vec<Icrc7TransferArgItem>,
-    ) -> CallResult<(Vec<Option<Icrc7TransferRetItemInner>>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_transfer", (arg0,)).await
+
+
+    fn is_subaccounts_eq(a: &Option<Vec<u8>>, b: &Option<Vec<u8>>) -> bool {
+        let default_subaccount = vec![0; 32]; // Default subaccount is 32 zero bytes
+        let a_str = a.as_ref().unwrap_or(&default_subaccount);
+        let b_str = b.as_ref().unwrap_or(&default_subaccount);
+        a_str == b_str
+    }
+
+    pub fn icrc_7_transfer(
+        &mut self,
+        args: Vec<Icrc7TransferArgItem>,
+    ) ->Vec<Option<Icrc7TransferRetItemInner>> {
+        args.into_iter()
+        .map(|arg| {
+            let token_id = arg
+                .token_id;
+
+            
+
+            let token = match  self.tokens.tokens.get(&token_id) {
+                Some(t) => t, 
+                None => return  Some(Icrc7TransferRetItemInner::Err(Icrc7TransferRetItemInnerErr::NonExistingTokenId) ) 
+            };
+
+            // Validate token ownership
+            if token.owner.principal != caller()
+                || !Self::is_subaccounts_eq(&token.owner.subaccount, &arg.from_subaccount) 
+            {
+                return Some(Icrc7TransferRetItemInner::Err(Icrc7TransferRetItemInnerErr::Unauthorized) );
+            }
+
+            // Validate recipient
+            if caller() == arg.to.owner
+                && !Self::is_subaccounts_eq(&token.owner.subaccount, &arg.to.subaccount)  
+            {
+                return Some(Icrc7TransferRetItemInner::Err(Icrc7TransferRetItemInnerErr::InvalidRecipient) );
+            }
+
+            self.tokens.transfer(token_id, arg.to.owner, arg.to.subaccount);
+
+            // Return the transaction index as the result
+            Some(Icrc7TransferRetItemInner::Ok(self.tokens.counter))
+        })
+        .collect()
     }
     pub async fn icrc_7_tx_window(&self) -> CallResult<(Option<candid::Nat>,)> {
         ic_cdk::call(Principal::anonymous(), "icrc7_tx_window", ()).await

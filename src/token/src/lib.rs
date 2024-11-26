@@ -10,6 +10,7 @@ use state::State;
 use state::metadata::Metadata;
 use ic_cdk_macros::*;
 use state::models::*;
+use crate::state::metadata::*;
 use crate::state::escrow::SaleStatus;
 use candid::Nat;
 use crate::state::icrc7::ICRC7MetadataQueryResult;
@@ -44,6 +45,7 @@ fn pre_upgrade() {
         metadata: state.borrow().metadata.clone(), 
         escrow: state.borrow().escrow.clone(), 
         transactions: state.borrow().transactions.clone(),
+        tokens: state.borrow().tokens.clone(),
     },)).unwrap());
 }
 

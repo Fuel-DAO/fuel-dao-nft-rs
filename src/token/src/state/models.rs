@@ -17,7 +17,7 @@ pub struct Icrc1Account {
 
 
 #[derive(CandidType, Deserialize, Clone)]
-pub enum Init {
+pub enum CanisterArgs {
   Upgrade,
   Init{
     metadata: Metadata

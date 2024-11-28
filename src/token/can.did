@@ -1,4 +1,5 @@
 type BookTokensArg = record { quantity : nat32 };
+type CanisterArgs = variant { Upgrade; Init : record { metadata : Metadata } };
 type GetEscrowAccountRet = record {
   account_id : text;
   account : GetEscrowAccountRetAccount;
@@ -157,7 +158,7 @@ type UpdateMetadataArgs = record {
   treasury : opt principal;
   images : opt vec text;
 };
-service : (Metadata) -> {
+service : (CanisterArgs) -> {
   accept_sale : () -> (Result);
   book_tokens : (BookTokensArg) -> (Result);
   change_ownership : (principal) -> (Result_1);

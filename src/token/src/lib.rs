@@ -14,7 +14,7 @@ use crate::state::metadata::*;
 use crate::state::escrow::SaleStatus;
 use candid::Nat;
 use crate::state::icrc7::ICRC7MetadataQueryResult;
-
+use crate::state::supported_standards::SupportedStandard;
 
 
 thread_local! {

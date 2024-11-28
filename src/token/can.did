@@ -123,6 +123,7 @@ type Result_1 = variant { Ok : nat; Err : text };
 type Result_2 = variant { Ok : GetEscrowAccountRet; Err : text };
 type Result_3 = variant { Ok : GetMetadataRet; Err : text };
 type SaleStatus = variant { Live; Rejected; Accepted };
+type SupportedStandard = record { url : text; name : text };
 type UpdateMetadataArgs = record {
   weight : opt float64;
   drive_type : opt text;
@@ -166,6 +167,7 @@ service : (Metadata) -> {
   get_participating_investors : () -> (vec principal) query;
   get_sale_status : () -> (SaleStatus) query;
   get_total_booked_tokens : () -> (nat) query;
+  icrc10_supported_standards : () -> (vec SupportedStandard) query;
   icrc7_atomic_batch_transfers : () -> (opt bool) query;
   icrc7_balance_of : (vec Icrc7BalanceOfArgItem) -> (vec nat64) query;
   icrc7_collection_metadata : () -> (vec record { text; MetadataValue }) query;
@@ -193,5 +195,7 @@ service : (Metadata) -> {
       vec opt Icrc7TransferRetItemInner,
     );
   icrc7_tx_window : () -> (opt nat) query;
+  refund_excess_after_sale : (principal) -> (Result);
+  reject_sale : () -> (Result);
   update_metadata : (UpdateMetadataArgs) -> (Result_1);
 }

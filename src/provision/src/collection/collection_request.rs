@@ -319,7 +319,6 @@ grant_asset_edit_perms(asset_canister_id, asset_proxy_canister)
 
 
   // // Step 6: TODO:// Approve the files
-  // Commented because crashing
   approve_files_from_proxy(asset_canister_id, approved_files, asset_proxy_canister)
       .await?;
 

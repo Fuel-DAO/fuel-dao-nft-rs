@@ -5,9 +5,11 @@ use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_cdk::api::call::CallResult as CallResult;
 use serde::Serialize;
 
+use super::metadata::Metadata;
 
 
-#[derive(CandidType, Deserialize, Serialize, Clone)]
+
+#[derive(CandidType, Deserialize, Serialize, Clone, Debug)]
 pub struct Icrc1Account {
   pub owner: Principal, 
   pub subaccount: Option<Vec<u8>>
@@ -18,38 +20,7 @@ pub struct Icrc1Account {
 pub enum Init {
   Upgrade,
   Init{
-    weight: f64,
-    drive_type: String,
-    purchase_price: candid::Nat,
-    token: Principal,
-    documents: Vec<(String,String,)>,
-    supply_cap: candid::Nat,
-    displays: String,
-    seating: String,
-    cargo: f64,
-    logo: String,
-    name: String,
-    overall_height: f64,
-    description: String,
-    overall_width: f64,
-    track_front: f64,
-    collection_owner: Principal,
-    asset_canister: Principal,
-    ground_clearance: f64,
-    key_features: Vec<String>,
-    range_per_charge: f64,
-    track_rear: f64,
-    acceleration: String,
-    charging_speed: String,
-    wheels: f64,
-    brochure_url: String,
-    index: Principal,
-    price: candid::Nat,
-    battery: String,
-    overall_length: f64,
-    symbol: String,
-    treasury: Principal,
-    images: Vec<String>,
+    metadata: Metadata
   },
 }
 

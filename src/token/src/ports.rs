@@ -18,7 +18,8 @@ pub async fn update_metadata( arg0: UpdateMetadataArgs) -> Result<Nat, String> {
 }
 
 
-#[update(guard = "check_not_anonymous")]
+// #[update(guard = "check_not_anonymous")]
+#[update]
 pub async fn book_tokens( arg: BookTokensArg) -> Result<bool, String> {
     let   f  =  STATE.with_borrow( |f|  f.clone() );
     let qunatity =  arg.quantity.clone();
@@ -31,6 +32,24 @@ pub async fn book_tokens( arg: BookTokensArg) -> Result<bool, String> {
 pub async fn accept_sale() -> Result<bool, String> {
     let    f  =  STATE.with( |f|  f.clone() );
     let x = f.borrow().accept_sale().await; x
+}
+
+#[update(guard = "check_collection_owner")]
+pub async fn reject_sale() -> Result<bool, String> {
+    let    f  =  STATE.with( |f|  f.borrow().clone() );
+    f.reject_sale().await
+}
+
+// #[update(guard = "check_collection_owner")]
+// pub async fn reject_sale_individual(invester: Principal) -> Result<bool, String> {
+//     let    f  =  STATE.with( |f|  f.borrow().clone() );
+//     f.reject_sale_individual(invester).await
+// }
+
+#[update(guard = "check_collection_owner")]
+pub async fn refund_excess_after_sale(invester: Principal) -> Result<bool, String> {
+    let    f  =  STATE.with( |f|  f.borrow().clone() );
+    f.refund_excess_after_sale(invester).await
 }
 
 #[query]

@@ -1,5 +1,6 @@
 use candid::{CandidType, Deserialize,  Principal};
 use ic_cdk::api::call::call;
+use ic_ledger_types::Tokens;
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -69,6 +70,11 @@ impl EscrowStore {
     /// Accept the sale
     pub fn accept_sale(&mut self) {
         self.sale_status = SaleStatus::Accepted;
+    }
+
+    /// Accept the sale
+    pub fn update_sale_status(&mut self, status: SaleStatus) {
+        self.sale_status = status;
     }
 
     /// Reject the sale
@@ -198,7 +204,6 @@ pub struct Transaction {
   pub transfer: Option<Transfer>,
 }
 
-pub type Tokens = candid::Nat;
 #[derive(CandidType, Deserialize)]
 pub struct Burn {
   pub from: Icrc1Account,

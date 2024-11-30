@@ -9,6 +9,7 @@ use super::{
 };
 use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_cdk::{api::call::CallResult, caller};
+use ic_ledger_types::Tokens;
 impl State {
     pub async fn accept_sale(&self) -> Result<bool, String> {
         // Check if the sale is live
@@ -17,8 +18,6 @@ impl State {
             return Err("Sale not live.".to_string());
         }
 
-        // Accept the sale
-        STATE.with_borrow_mut(|F| F.escrow.accept_sale());
 
         // Retrieve treasury, ledger, and booked tokens
         let metadata = self.metadata.clone().map(|f| f.metadata);
@@ -31,28 +30,37 @@ impl State {
         let booked_tokens = escrow_store.get_booked_tokens();
 
         for (investor, quantity) in booked_tokens.iter() {
-            let escrow_subaccount:Subaccount = investor.into();
+            let escrow_subaccount = Subaccount::from(investor);
             let user_invested_amount = quantity.clone() as f64 * metadata.price.clone();
 
             // Transfer funds to treasury
             const TRANSFER_FEE: u64 = 10_000;
-            let (_transfer_result,): (u64,) = ic_cdk::call(
+
+            let args = TransferArgs {
+                to: Icrc1Account {
+                    owner: treasury,
+                    subaccount: None,
+                },
+                from_subaccount: Some(escrow_subaccount.to_vec()),
+                fee: Some(TRANSFER_FEE.clone()),
+                memo: None,
+                created_at_time: None,
+                amount: user_invested_amount as u64,
+            };
+
+            let encoded_args = &args/*  Encode!(&args).expect("Failed to encode arguments") */;
+
+            let (_transfer_result,): (Result<u64, TransferError> , ) = ic_cdk::call(
                 ledger,
                 "icrc1_transfer",
-                (TransferArgs {
-                    to: Icrc1Account {
-                        owner: treasury,
-                        subaccount: None,
-                    },
-                    from_subaccount: Some(escrow_subaccount.to_vec()),
-                    fee: Some(TRANSFER_FEE.clone()),
-                    memo: None,
-                    created_at_time: None,
-                    amount: user_invested_amount as u64,
-                },),
+                (encoded_args,),
             )
             .await
-            .map_err(|err| format!("Transfer failed: {:?}", err))?;
+            .map_err(|err| format!("Icrc1 Transfer call failed: {err:?} for owner: {}, invester: {}, args: {args:?}", treasury.to_text(), investor.to_text(), ))?;
+
+            _transfer_result.map_err(|e| format!("Icrc1 Trabsfer failed {e:?}") )?;
+
+            
 
             // Mint tokens for the investor
             for _ in 0..quantity.clone() {
@@ -64,6 +72,9 @@ impl State {
                 });
             }
         }
+
+         // Accept the sale
+        STATE.with_borrow_mut(|F| F.escrow.accept_sale());
 
         Ok(true)
     }
@@ -95,7 +106,7 @@ impl State {
         let escrow_balance = EscrowStore::icrc1_balance_of(
             icp_ledger,
             Icrc1Account {
-                owner: principal,
+                owner: ic_cdk::id(),
                 subaccount: Some(subaccount.to_vec()),
             },
         )
@@ -111,14 +122,16 @@ impl State {
             * &(metadata.price + 10_000.0);
 
         if (escrow_balance as f64) < total_cost {
-            return Err("Invalid balance in escrow.".to_string());
+            return Err(format!("Invalid balance in escrow. Req quantity: {} Total invested: {total_invested_count} Current balanace: {escrow_balance}, total cost: {total_cost}", arg.quantity));
         }
+
+        ic_cdk::println!("Escrow balance {escrow_balance}, cost {total_cost} ");
 
         if &escrow_store.total_booked_tokens + &(arg.quantity as u128) > metadata.supply_cap {
             return Err("Supply cap reached.".to_string());
         }
 
-        escrow_store.book_tokens(principal, arg.quantity.into());
+         escrow_store.book_tokens(principal, arg.quantity.into());
 
         Ok(true)
     }
@@ -214,35 +227,35 @@ impl State {
             .collect()
     }
 
-    pub async fn icrc_7_collection_metadata(
-        &self,
-    ) -> CallResult<(Vec<(String, Icrc7CollectionMetadataRetItem1)>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_collection_metadata", ()).await
-    }
-    pub async fn icrc_7_description(&self) -> CallResult<(Option<String>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_description", ()).await
-    }
-    pub async fn icrc_7_logo(&self) -> CallResult<(Option<String>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_logo", ()).await
-    }
-    pub async fn icrc_7_max_default_take_value(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_max_default_take_value", ()).await
-    }
-    pub async fn icrc_7_max_memo_size(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_max_memo_size", ()).await
-    }
-    pub async fn icrc_7_max_query_batch_size(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_max_query_batch_size", ()).await
-    }
-    pub async fn icrc_7_max_take_value(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_max_take_value", ()).await
-    }
-    pub async fn icrc_7_max_update_batch_size(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_max_update_batch_size", ()).await
-    }
-    pub async fn icrc_7_name(&self) -> CallResult<(String,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_name", ()).await
-    }
+    // pub async fn icrc_7_collection_metadata(
+    //     &self,
+    // ) -> CallResult<(Vec<(String, Icrc7CollectionMetadataRetItem1)>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_collection_metadata", ()).await
+    // }
+    // pub async fn icrc_7_description(&self) -> CallResult<(Option<String>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_description", ()).await
+    // }
+    // pub async fn icrc_7_logo(&self) -> CallResult<(Option<String>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_logo", ()).await
+    // }
+    // pub async fn icrc_7_max_default_take_value(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_max_default_take_value", ()).await
+    // }
+    // pub async fn icrc_7_max_memo_size(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_max_memo_size", ()).await
+    // }
+    // pub async fn icrc_7_max_query_batch_size(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_max_query_batch_size", ()).await
+    // }
+    // pub async fn icrc_7_max_take_value(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_max_take_value", ()).await
+    // }
+    // pub async fn icrc_7_max_update_batch_size(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_max_update_batch_size", ()).await
+    // }
+    // pub async fn icrc_7_name(&self) -> CallResult<(String,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_name", ()).await
+    // }
     pub fn icrc_7_owner_of(&self, arg0: Vec<u32>) -> Vec<Option<Icrc7OwnerOfRetItemInner>> {
         arg0.into_iter()
             .map(|id| self.tokens.tokens.get(&id)) // Get the token by ID
@@ -254,15 +267,15 @@ impl State {
             })
             .collect()
     }
-    pub async fn icrc_7_permitted_drift(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_permitted_drift", ()).await
-    }
-    pub async fn icrc_7_supply_cap(&self) -> CallResult<(Option<candid::Nat>,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_supply_cap", ()).await
-    }
-    pub async fn icrc_7_symbol(&self) -> CallResult<(String,)> {
-        ic_cdk::call(Principal::anonymous(), "icrc7_symbol", ()).await
-    }
+    // pub async fn icrc_7_permitted_drift(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_permitted_drift", ()).await
+    // }
+    // pub async fn icrc_7_supply_cap(&self) -> CallResult<(Option<candid::Nat>,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_supply_cap", ()).await
+    // }
+    // pub async fn icrc_7_symbol(&self) -> CallResult<(String,)> {
+    //     ic_cdk::call(Principal::anonymous(), "icrc7_symbol", ()).await
+    // }
     pub fn icrc_7_token_metadata(
         &self,
         arg0: Vec<u32>,
@@ -420,8 +433,6 @@ impl State {
             return Result::Err("Sale not live.".to_string());
         }
 
-        // Reject the sale
-        STATE.with_borrow_mut(|F| F.escrow.reject_sale());
 
         // Process refunds for all booked tokens
         for (investor_principal, _) in self.escrow.booked_tokens.iter() {
@@ -430,6 +441,10 @@ impl State {
                 _ => {}
             }
         }
+
+        // Reject the sale
+        STATE.with_borrow_mut(|F| F.escrow.reject_sale());
+
 
         Result::Ok(true)
     }

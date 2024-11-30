@@ -28,23 +28,12 @@
     "icp_index_canister": {
       "type": "custom",
       "candid": "https://raw.githubusercontent.com/dfinity/ic/d87954601e4b22972899e9957e800406a0a6b929/rs/rosetta-api/icp_ledger/index/index.did",
-      "wasm": "https://download.dfinity.systems/ic/d87954601e4b22972899e9957e800406a0a6b929/canisters/ic-icp-index-canister.wasm.gz",
-        "remote": {
-        "id": {
-          "ic": "qhbym-qaaaa-aaaaa-aaafq-cai"
-        }
-      }
+      "wasm": "https://download.dfinity.systems/ic/d87954601e4b22972899e9957e800406a0a6b929/canisters/ic-icp-index-canister.wasm.gz"
     },
     "icp_ledger_canister": {
       "type": "custom",
       "candid": "https://raw.githubusercontent.com/dfinity/ic/aba60ffbc46acfc8990bf4d5685c1360bd7026b9/rs/ledger_suite/icp/ledger.did",
-      "wasm": "https://download.dfinity.systems/ic/aba60ffbc46acfc8990bf4d5685c1360bd7026b9/canisters/ledger-canister.wasm.gz",
-      "init_arg" : "(variant { Init = record { minting_account = \"d58823039a18d365622560f3aedb914ca63a6e7bab275df7dd061169568a004a\"; initial_values = vec { record { \"2b8fbde99de881f695f279d2a892b1137bfe81a42d7694e064b1be58701e1138\"; record { e8s = 10_000_000_000 : nat64; }; }; }; send_whitelist = vec {}; transfer_fee = opt record { e8s = 10_000 : nat64; }; token_symbol = opt \"FUEL\"; token_name = opt \"FUELDAO ICP\"; } })",
-      "remote": {
-        "id": {
-          "ic": "ryjl3-tyaaa-aaaaa-aaaba-cai"
-        }
-      }
+      "wasm": "https://download.dfinity.systems/ic/aba60ffbc46acfc8990bf4d5685c1360bd7026b9/canisters/ledger-canister.wasm.gz"
     }
   },
   "defaults": {

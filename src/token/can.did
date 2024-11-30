@@ -199,4 +199,5 @@ service : (CanisterArgs) -> {
   refund_excess_after_sale : (principal) -> (Result);
   reject_sale : () -> (Result);
   update_metadata : (UpdateMetadataArgs) -> (Result_1);
+  update_sale_status : (SaleStatus) -> (SaleStatus);
 }

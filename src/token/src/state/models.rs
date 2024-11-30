@@ -187,7 +187,7 @@ pub enum Icrc7TransferRetItemInnerErr {
   TooOld,
 }
 
-#[derive(CandidType, Deserialize, Clone)]
+#[derive(CandidType, Deserialize, Clone, Debug)]
 pub  struct TransferArgs {
  pub to: Icrc1Account,
  pub from_subaccount: Option<Vec<u8>>,
@@ -195,6 +195,18 @@ pub  struct TransferArgs {
  pub memo: Option<String>,
  pub created_at_time: Option<u64>,
  pub amount: u64,
+}
+
+#[derive(CandidType, Deserialize, Debug)]
+pub enum TransferError {
+  GenericError{ message: String, error_code: candid::Nat },
+  TemporarilyUnavailable,
+  BadBurn{ min_burn_amount: candid::Nat },
+  Duplicate{ duplicate_of: candid::Nat },
+  BadFee{ expected_fee: candid::Nat },
+  CreatedInFuture{ ledger_time: u64 },
+  TooOld,
+  InsufficientFunds{ balance: candid::Nat },
 }
 
 #[derive(CandidType, Deserialize, Clone)]

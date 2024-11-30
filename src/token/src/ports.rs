@@ -115,6 +115,12 @@ pub async fn get_sale_status() -> SaleStatus {
     .get_sale_status().await 
 }
 
+#[update(guard = "check_collection_owner")]
+pub async fn update_sale_status(status: SaleStatus) -> SaleStatus {
+    STATE.with( |f|  f.borrow_mut().escrow.update_sale_status(status.clone()) );
+    status
+}
+
 
 #[query]
 pub async fn get_total_booked_tokens() -> u128 {

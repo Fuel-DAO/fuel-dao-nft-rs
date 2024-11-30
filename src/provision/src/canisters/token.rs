@@ -7,52 +7,47 @@ use ic_cdk::api::management_canister::{
 use crate::CollectionRequest;
 
 #[derive(CandidType, Deserialize)]
-pub struct TokenCanisterArgs {
-    pub init: CollectionMetadata,
-    pub upgrade: (),
+pub enum TokenCanisterArgs {
+  Upgrade,
+  Init{
+    metadata: CollectionMetadata
+  },
 }
 
 #[derive(CandidType, Deserialize)]
 pub struct CollectionMetadata {
-     // BaseMetadataRaw fields
-     pub symbol: String,
-     pub name: String,
-     pub description: String,
-     pub logo: String,
-     pub supply_cap: u128,
-     pub price: u128,
-     pub treasury: Principal,
-     pub asset_canister: Principal,
-     pub token: Principal,
-     pub index: Principal,
- 
-     // ExtendedMetadataRaw fields
-     pub purchase_price: u128,
-     pub brochure_url: String,
-     pub battery: String,
-     pub range_per_charge: f64,
-     pub charging_speed: String,
-     pub seating: String,
-     pub cargo: f64,
-     pub key_features: Vec<String>,
-     pub acceleration: String,
-     pub drive_type: String,
-     pub weight: f64,
-     pub wheels: f64,
-     pub displays: String,
-     pub ground_clearance: f64,
-     pub overall_width: f64,
-     pub overall_height: f64,
-     pub overall_length: f64,
-     pub track_front: f64,
-     pub track_rear: f64,
-     pub images: Vec<String>,
-     pub documents: Vec<(String, String)>,
- 
-     // Additional field from MetadataRaw
-     pub collection_owner: Principal,
-   
-
+    pub weight: f64,
+    pub drive_type: String,
+    pub purchase_price: u128,
+    pub token: Principal,
+    pub documents: Vec<(String, String)>,
+    pub supply_cap: u128,
+    pub displays: String,
+    pub seating: String,
+    pub cargo: f64,
+    pub logo: String,
+    pub name: String,
+    pub overall_height: f64,
+    pub description: String,
+    pub overall_width: f64,
+    pub track_front: f64,
+    pub collection_owner: Principal,
+    pub asset_canister: Principal,
+    pub ground_clearance: f64,
+    pub key_features: Vec<String>,
+    pub range_per_charge: f64,
+    pub track_rear: f64,
+    pub acceleration: String,
+    pub charging_speed: String,
+    pub wheels: f64,
+    pub brochure_url: String,
+    pub index: Principal,
+    pub price: f64,
+    pub battery: String,
+    pub overall_length: f64,
+    pub symbol: String,
+    pub treasury: Principal,
+    pub images: Vec<String>,
 }
 
 
@@ -120,7 +115,7 @@ pub async fn deploy_token(wasm: Vec<u8>, request: CollectionMetadata) -> Result<
         mode: ic_cdk::api::management_canister::main::CanisterInstallMode::Install,
         canister_id,
         wasm_module: wasm,
-        arg: candid::encode_args((TokenCanisterArgs { init: request, upgrade: () },)).unwrap(),
+        arg: candid::encode_args((TokenCanisterArgs::Init { metadata: request } ,)).unwrap(),
     };
 
     if let Err((e, err_msg)) = install_code(install_code_arg).await {

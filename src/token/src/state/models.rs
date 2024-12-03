@@ -191,8 +191,8 @@ pub enum Icrc7TransferRetItemInnerErr {
 pub  struct TransferArgs {
  pub to: Icrc1Account,
  pub from_subaccount: Option<Vec<u8>>,
- pub fee: Option<u64>,
- pub memo: Option<String>,
+ pub fee: Option<Nat>,
+ pub memo: Option<Vec<u8>>,
  pub created_at_time: Option<u64>,
  pub amount: u64,
 }

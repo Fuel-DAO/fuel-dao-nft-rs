@@ -1,4 +1,6 @@
 #![allow(dead_code, unused_imports)]
+use std::fmt::format;
+
 use crate::{state::Owner, validations, STATE};
 
 use super::{
@@ -9,7 +11,7 @@ use super::{
 };
 use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_cdk::{api::call::CallResult, caller};
-use ic_ledger_types::Tokens;
+use ic_ledger_types::{Memo,  Tokens, DEFAULT_SUBACCOUNT};
 impl State {
     pub async fn accept_sale(&self) -> Result<bool, String> {
         // Check if the sale is live
@@ -29,10 +31,8 @@ impl State {
         let ledger = metadata.token;
         let booked_tokens = escrow_store.get_booked_tokens();
 
-        for (investor, quantity) in booked_tokens.iter() {
-            let escrow_subaccount = Subaccount::from(investor);
-            let user_invested_amount = quantity.clone() as f64 * metadata.price.clone();
-
+        for (investor, quantity) in booked_tokens.iter().filter(|f| f.1 > &0) {
+            let user_invested_amount = quantity.clone() as f64 * (metadata.price.clone() * 100_000_000.0);
             // Transfer funds to treasury
             const TRANSFER_FEE: u64 = 10_000;
 
@@ -41,16 +41,26 @@ impl State {
                     owner: treasury,
                     subaccount: None,
                 },
-                from_subaccount: Some(escrow_subaccount.to_vec()),
-                fee: Some(TRANSFER_FEE.clone()),
+                from_subaccount: Some(Subaccount::from(&investor.clone()).to_vec()),
+                fee: Some(TRANSFER_FEE.clone().into()),
                 memo: None,
                 created_at_time: None,
                 amount: user_invested_amount as u64,
             };
 
-            let encoded_args = &args/*  Encode!(&args).expect("Failed to encode arguments") */;
+            // let encoded_args = &args/*  Encode!(&args).expect("Failed to encode arguments") */;
+            
+            // let args = ic_ledger_types::TransferArgs {
+            //   memo: Memo(0),
+            //   amount: Tokens::from_e8s(user_invested_amount as u64),
+            //   fee: Tokens::from_e8s(TRANSFER_FEE),
+            //   from_subaccount: Some(ic_ledger_types::Subaccount::from(investor.clone())),
+            //   to: ic_ledger_types::AccountIdentifier::from_hex(&AccountIdentifier::from_principal(treasury, None).to_hex())?,
+            //   created_at_time: None,
+            // };
+            let encoded_args = args.clone()/*  Encode!(&args).expect("Failed to encode arguments") */;
 
-            let (_transfer_result,): (Result<u64, TransferError> , ) = ic_cdk::call(
+            let (_transfer_result,): (Result<Nat, ic_ledger_types::TransferError> , ) = ic_cdk::call(
                 ledger,
                 "icrc1_transfer",
                 (encoded_args,),
@@ -58,8 +68,9 @@ impl State {
             .await
             .map_err(|err| format!("Icrc1 Transfer call failed: {err:?} for owner: {}, invester: {}, args: {args:?}", treasury.to_text(), investor.to_text(), ))?;
 
-            _transfer_result.map_err(|e| format!("Icrc1 Trabsfer failed {e:?}") )?;
+            _transfer_result.map_err(|e| format!("Icrc1 Transfer failed {e:?}") )?;
 
+            
             
 
             // Mint tokens for the investor
@@ -78,12 +89,7 @@ impl State {
 
         Ok(true)
     }
-    pub async fn accept_sale_individual(
-        &self,
-        arg0: Principal,
-    ) -> CallResult<(AcceptSaleIndividualRet,)> {
-        ic_cdk::call(Principal::anonymous(), "accept_sale_individual", (arg0,)).await
-    }
+    
 
     /// Should not be anonymous
     pub async fn book_tokens(&self, arg: BookTokensArg) -> Result<bool, String> {
@@ -438,7 +444,10 @@ impl State {
         for (investor_principal, _) in self.escrow.booked_tokens.iter() {
             match self.escrow.refund_from_escrow(investor_principal, self.metadata.as_ref().unwrap().metadata.clone()).await {
                 Result::Err(err) => return Result::Err(err),
-                _ => {}
+                _ => {
+                STATE.with_borrow_mut(|f| f.escrow.reject_sale_update_invester_booked_tokens(investor_principal));
+
+                }
             }
         }
 

@@ -61,11 +61,11 @@ TOKENS_TRANSFER_ACCOUNT_ID_BYTES="$(python3 -c 'print("vec{" + ";".join([str(b) 
 dfx canister call icp_ledger_canister transfer "(record { to = ${TOKENS_TRANSFER_ACCOUNT_ID_BYTES}; memo = 1; amount = record { e8s = 2_00_000_000 }; fee = record { e8s = 10_000 }; })"
 
 
-dfx canister call br5f7-7uaaa-aaaaa-qaaca-cai get_account_transactions '(record{account=record {owner = principal "hpikg-6exdt-jn33w-ndty3-fc7jc-tl2lr-buih3-cs3y7-tftkp-sfp62-gqe"}; max_results=10:nat})'
+dfx canister call icp_index_canister get_account_transactions '(record{account=record {owner = principal "hpikg-6exdt-jn33w-ndty3-fc7jc-tl2lr-buih3-cs3y7-tftkp-sfp62-gqe"}; max_results=10:nat})'
 
 dfx ledger account-id --of-principal hpikg-6exdt-jn33w-ndty3-fc7jc-tl2lr-buih3-cs3y7-tftkp-sfp62-gqe
 
-dfx canister call br5f7-7uaaa-aaaaa-qaaca-cai icrc1_balance_of '(record{owner = principal "hpikg-6exdt-jn33w-ndty3-fc7jc-tl2lr-buih3-cs3y7-tftkp-sfp62-gqe"})'
+dfx canister call ryjl3-tyaaa-aaaaa-aaaba-cai icrc1_balance_of '(record{owner = principal "hpikg-6exdt-jn33w-ndty3-fc7jc-tl2lr-buih3-cs3y7-tftkp-sfp62-gqe"})'
 
 
-dfx deploy icp_index_canister --mode reinstall --argument '(record { ledger_id = principal "ryjl3-tyaaa-aaaaa-aaaba-cai";})'
+dfx deploy icp_index_canister --mode reinstall --argument '(record { ledger_id = principal "b77ix-eeaaa-aaaaa-qaada-cai";})'

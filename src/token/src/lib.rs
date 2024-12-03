@@ -15,6 +15,8 @@ use state::models::*;
 use state::MetaDataState;
 use state::State;
 use std::cell::RefCell;
+use icrc_ledger_types::icrc1::transfer::BlockIndex;
+use icrc_ledger_types::icrc1::transfer::TransferArg;
 
 thread_local! {
     static STATE: RefCell<State> = RefCell::new(Default::default());

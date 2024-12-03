@@ -1,19 +1,16 @@
 #![allow(dead_code, unused_imports)]
-use std::fmt::format;
 
-use crate::{state::Owner, validations, STATE};
+use crate::{state::{icrc1, Owner}, validations, STATE};
 
 use super::{
-    escrow::{EscrowStore, SaleStatus},
-    models::*,
-    subaccount::{Subaccount, AccountIdentifier},
-    State, TokenState,
+    escrow::{EscrowStore, SaleStatus}, metadata::Metadata, models::*, subaccount::{AccountIdentifier, Subaccount}, State, TokenState
 };
 use candid::{self, CandidType, Decode, Deserialize, Encode, Nat, Principal};
 use ic_cdk::{api::call::CallResult, caller};
 use ic_ledger_types::{Memo,  Tokens, DEFAULT_SUBACCOUNT};
+use icrc_ledger_types::icrc1::{account::Account, transfer::TransferArg};
 impl State {
-    pub async fn accept_sale(&self) -> Result<bool, String> {
+    pub async fn accept_sale(&mut self) -> Result<bool, String> {
         // Check if the sale is live
         let escrow_store = self.escrow.clone();
         if escrow_store.sale_status != SaleStatus::Live {
@@ -32,60 +29,108 @@ impl State {
         let booked_tokens = escrow_store.get_booked_tokens();
 
         for (investor, quantity) in booked_tokens.iter().filter(|f| f.1 > &0) {
-            let user_invested_amount = quantity.clone() as f64 * (metadata.price.clone() * 100_000_000.0);
+            let price = metadata.price;
+            let user_invested_amount = quantity.clone() as u64 * (price) as u64;
             // Transfer funds to treasury
             const TRANSFER_FEE: u64 = 10_000;
 
-            let args = TransferArgs {
-                to: Icrc1Account {
+            let args  =TransferArg {
+                from_subaccount: Some(Subaccount::from(&investor.clone()).0),
+                to: Account {
                     owner: treasury,
                     subaccount: None,
                 },
-                from_subaccount: Some(Subaccount::from(&investor.clone()).to_vec()),
-                fee: Some(TRANSFER_FEE.clone().into()),
-                memo: None,
+                fee: Some(TRANSFER_FEE.into()),
                 created_at_time: None,
-                amount: user_invested_amount as u64,
+                memo: None,
+                amount: user_invested_amount.into(),
             };
 
-            // let encoded_args = &args/*  Encode!(&args).expect("Failed to encode arguments") */;
-            
-            // let args = ic_ledger_types::TransferArgs {
-            //   memo: Memo(0),
-            //   amount: Tokens::from_e8s(user_invested_amount as u64),
-            //   fee: Tokens::from_e8s(TRANSFER_FEE),
-            //   from_subaccount: Some(ic_ledger_types::Subaccount::from(investor.clone())),
-            //   to: ic_ledger_types::AccountIdentifier::from_hex(&AccountIdentifier::from_principal(treasury, None).to_hex())?,
-            //   created_at_time: None,
+            let transaction = icrc1::icrc1_transfer(ledger, args.clone()).await.map_err(|f| format!("Failed to do icrc1 transfer: {quantity} * {price} = {user_invested_amount} {f:?} {args:?}"))?;
+
+            // let args = TransferArgs {
+            //     to: Icrc1Account {
+            //         owner: treasury,
+            //         subaccount: None,
+            //     },
+            //     from_subaccount: Some(Subaccount::from(&investor.clone()).to_vec()),
+            //     fee: Some(TRANSFER_FEE.clone().into()),
+            //     memo: None,
+            //     created_at_time: None,
+            //     amount: user_invested_amount as u64,
             // };
-            let encoded_args = args.clone()/*  Encode!(&args).expect("Failed to encode arguments") */;
 
-            let (_transfer_result,): (Result<Nat, ic_ledger_types::TransferError> , ) = ic_cdk::call(
-                ledger,
-                "icrc1_transfer",
-                (encoded_args,),
-            )
-            .await
-            .map_err(|err| format!("Icrc1 Transfer call failed: {err:?} for owner: {}, invester: {}, args: {args:?}", treasury.to_text(), investor.to_text(), ))?;
+            // // let encoded_args = &args/*  Encode!(&args).expect("Failed to encode arguments") */;
+            
+            // // let args = ic_ledger_types::TransferArgs {
+            // //   memo: Memo(0),
+            // //   amount: Tokens::from_e8s(user_invested_amount as u64),
+            // //   fee: Tokens::from_e8s(TRANSFER_FEE),
+            // //   from_subaccount: Some(ic_ledger_types::Subaccount::from(investor.clone())),
+            // //   to: ic_ledger_types::AccountIdentifier::from_hex(&AccountIdentifier::from_principal(treasury, None).to_hex())?,
+            // //   created_at_time: None,
+            // // };
+            // let encoded_args = args.clone()/*  Encode!(&args).expect("Failed to encode arguments") */;
 
-            _transfer_result.map_err(|e| format!("Icrc1 Transfer failed {e:?}") )?;
+            // let (_transfer_result,): (Result<Nat, ic_ledger_types::TransferError> , ) = ic_cdk::call(
+            //     ledger,
+            //     "icrc1_transfer",
+            //     (encoded_args,),
+            // )
+            // .await
+            // .map_err(|err| format!("Icrc1 Transfer call failed: {err:?} for owner: {}, invester: {}, args: {args:?}", treasury.to_text(), investor.to_text(), ))?;
+
+            // _transfer_result.map_err(|e| format!("Icrc1 Transfer failed {e:?}") )?;
 
             
             
 
             // Mint tokens for the investor
             for _ in 0..quantity.clone() {
-                STATE.with_borrow_mut(|F| {
-                    F.tokens.mint(
-                        *investor,
-                        Some(Subaccount::from(investor).to_vec()),
-                    )
-                });
+                self.tokens.mint(
+                    *investor,
+                    Some(Subaccount::from(investor).to_vec()),
+                );
+                self.metadata.as_mut().map(|f| f.increment_supply());
             }
         }
 
          // Accept the sale
-        STATE.with_borrow_mut(|F| F.escrow.accept_sale());
+        self.escrow.accept_sale();
+
+        Ok(true)
+    }
+    pub async fn accept_sale_individual_icrc1_transfer(invester: Principal, quantity: u128, metadata: Option<Metadata>, sale_status: SaleStatus ) -> Result<bool, String> {
+        // Check if the sale is live
+        if sale_status != SaleStatus::Live {
+            return Err("Sale not live.".to_string());
+        }
+        // Retrieve treasury, ledger, and booked tokens
+        if metadata.is_none() {
+            return Err("Metadata not set".into());
+        }
+        let metadata = metadata.unwrap();
+
+            let price = metadata.price;
+            let ledger =  metadata.token;
+            let treasury  = metadata.treasury;
+            let user_invested_amount = quantity.clone() as u64 * (price) as u64;
+            // Transfer funds to treasury
+            const TRANSFER_FEE: u64 = 10_000;
+
+            let args  =TransferArg {
+                from_subaccount: Some(Subaccount::from(&invester.clone()).0),
+                to: Account {
+                    owner: treasury,
+                    subaccount: None,
+                },
+                fee: Some(TRANSFER_FEE.into()),
+                created_at_time: None,
+                memo: None,
+                amount: user_invested_amount.into(),
+            };
+
+            let _ = icrc1::icrc1_transfer(ledger, args.clone()).await.map_err(|f| format!("Failed to do icrc1 transfer: {quantity} * {price} = {user_invested_amount} {f:?} {args:?}"))?;
 
         Ok(true)
     }

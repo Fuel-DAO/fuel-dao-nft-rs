@@ -73,7 +73,6 @@ pub fn to_account_id(principal: &str, subaccount: &Option<Vec<u8>>) -> String {
         );
         user_token_index.insert(token_id, true);
 
-        STATE.with_borrow_mut(|F| {F.metadata.as_mut().map(|f| f.increment_supply());});
         token_id
     }
 

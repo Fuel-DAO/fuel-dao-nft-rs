@@ -36,20 +36,21 @@ Todo:
 [*] icrc10_supported_standards
 
 
-dfx deploy token  --argument '(variant { Init = record { metadata = record { weight = 1000.0; drive_type = "Electric"; purchase_price = 10_000; token = principal "bnz7o-iuaaa-aaaaa-qaaaa-cai"; documents = vec { record { "Document1"; "https://doc1.com" }; record { "Document2"; "https://doc2.com" } }; supply_cap = 1000; displays = "LED"; seating = "5-seater"; cargo = 500.0; logo = "https://logo_url.com"; name = "EcoCar"; overall_height = 1.8; description = "Eco-friendly car"; overall_width = 1.9; track_front = 1.5; collection_owner = principal "2vxsx-fae"; asset_canister = principal "avqkn-guaaa-aaaaa-qaaea-cai"; ground_clearance = 0.2; key_features = vec { "Fast Charging"; "Long Range" }; range_per_charge = 400.0; track_rear = 1.6; acceleration = "5.2s 0-100km/h"; charging_speed = "50kW"; wheels = 4.0; brochure_url = "https://brochure.com"; index = principal "bd3sg-teaaa-aaaaa-qaaba-cai"; price = 1.0; battery = "Lithium-ion"; overall_length = 4.5; total_supply = 1000; symbol = "ECO"; treasury = principal "5k33e-6lp65-cr434-tfxi2-sy2di-clhez-x6aq4-s4prn-i74up-wgw6r-tqe"; images = vec { "https://image1.com"; "https://image2.com" } }}})'
+dfx deploy token  --argument '(variant { Init = record { metadata = record { weight = 1000.0; drive_type = "Electric"; purchase_price = 10_000; token = principal "ryjl3-tyaaa-aaaaa-aaaba-cai"; documents = vec { record { "Document1"; "https://doc1.com" }; record { "Document2"; "https://doc2.com" } }; supply_cap = 1000; displays = "LED"; seating = "5-seater"; cargo = 500.0; logo = "https://logo_url.com"; name = "EcoCar"; overall_height = 1.8; description = "Eco-friendly car"; overall_width = 1.9; track_front = 1.5; collection_owner = principal "2vxsx-fae"; asset_canister = principal "avqkn-guaaa-aaaaa-qaaea-cai"; ground_clearance = 0.2; key_features = vec { "Fast Charging"; "Long Range" }; range_per_charge = 400.0; track_rear = 1.6; acceleration = "5.2s 0-100km/h"; charging_speed = "50kW"; wheels = 4.0; brochure_url = "https://brochure.com"; index = principal "bkyz2-fmaaa-aaaaa-qaaaq-cai"; price = 100000000.0; battery = "Lithium-ion"; overall_length = 4.5; total_supply = 1000; symbol = "ECO"; treasury = principal "kdix6-cq3ej-2p465-a4tg7-cny6h-k3qsp-givr4-oxqw5-3cjsj-5lkcy-cae"; images = vec { "https://image1.com"; "https://image2.com" } }}})'
 
 dfx deploy token --argument '(variant { Upgrade })'
 
 
 dfx canister call c2lt4-zmaaa-aaaaa-qaaiq-cai book_tokens '(record { quantity = 1; })'
 dfx canister call token book_tokens '(record { quantity = 1; })'
+dfx canister call token get_booked_tokens 
 
 
 CLI account id: 
 dfx canister call token get_escrow_account
-509bd11617aa3b2e0ce521878ca5d700b24f67874c5340ee12e39edec84d009f
+879023eca00d97170fb853b09931a7ecddcf7ff43dcadac9cd468fbf218ac574
 
-dfx ledger transfer --memo 1  --amount 2  '509bd11617aa3b2e0ce521878ca5d700b24f67874c5340ee12e39edec84d009f'
+dfx ledger transfer --memo 1  --amount 2  '879023eca00d97170fb853b09931a7ecddcf7ff43dcadac9cd468fbf218ac574'
 
 
 dfx canister call icp_ledger_canister account_balance '(record { account = '$(python3 -c 'print("vec{" + ";".join([str(b) for b in bytes.fromhex("'$DEFAULT_ACCOUNT_ID'")]) + "}")')'})'

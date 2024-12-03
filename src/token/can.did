@@ -1,3 +1,4 @@
+type Account = record { owner : principal; subaccount : opt blob };
 type BookTokensArg = record { quantity : nat32 };
 type CanisterArgs = variant { Upgrade; Init : record { metadata : Metadata } };
 type GetEscrowAccountRet = record {
@@ -44,10 +45,6 @@ type GetMetadataRet = record {
   images : vec text;
 };
 type Icrc7BalanceOfArgItem = record { owner : principal; subaccount : blob };
-type Icrc7OwnerOfRetItemInner = record {
-  owner : principal;
-  subaccount : opt blob;
-};
 type Icrc7TokenMetadataRetItemInnerItem1 = variant {
   Int : int;
   Map : vec record { text; Icrc7TokenMetadataRetItemInnerItem1MapItem1 };
@@ -125,6 +122,14 @@ type Result_2 = variant { Ok : GetEscrowAccountRet; Err : text };
 type Result_3 = variant { Ok : GetMetadataRet; Err : text };
 type SaleStatus = variant { Live; Rejected; Accepted };
 type SupportedStandard = record { url : text; name : text };
+type TransferArg = record {
+  to : Account;
+  fee : opt nat;
+  memo : opt blob;
+  from_subaccount : opt blob;
+  created_at_time : opt nat64;
+  amount : nat;
+};
 type UpdateMetadataArgs = record {
   weight : opt float64;
   drive_type : opt text;
@@ -169,6 +174,7 @@ service : (CanisterArgs) -> {
   get_sale_status : () -> (SaleStatus) query;
   get_total_booked_tokens : () -> (nat) query;
   icrc10_supported_standards : () -> (vec SupportedStandard) query;
+  icrc1_transfer : (principal, TransferArg) -> (Result_1);
   icrc7_atomic_batch_transfers : () -> (opt bool) query;
   icrc7_balance_of : (vec Icrc7BalanceOfArgItem) -> (vec nat64) query;
   icrc7_collection_metadata : () -> (vec record { text; MetadataValue }) query;
@@ -180,7 +186,7 @@ service : (CanisterArgs) -> {
   icrc7_max_take_value : () -> (opt nat) query;
   icrc7_max_update_batch_size : () -> (opt nat) query;
   icrc7_name : () -> (text) query;
-  icrc7_owner_of : (vec nat32) -> (vec opt Icrc7OwnerOfRetItemInner) query;
+  icrc7_owner_of : (vec nat32) -> (vec opt Account) query;
   icrc7_permitted_drift : () -> (opt nat) query;
   icrc7_supply_cap : () -> (opt nat) query;
   icrc7_symbol : () -> (text) query;

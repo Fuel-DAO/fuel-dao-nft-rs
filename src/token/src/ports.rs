@@ -1,6 +1,7 @@
 use candid::{Nat, Principal};
 use ic_cdk::caller;
 use crate::state::metadata::UpdateMetadataArgs;
+use crate::state::subaccount::Subaccount;
 use crate::validations::{check_collection_owner,check_not_anonymous};
 use crate::{BookTokensArg, Icrc7BalanceOfArgItem, Icrc7OwnerOfRetItemInner, Icrc7TokenMetadataRetItemInnerItem1, Icrc7TokensOfArg, Icrc7TransferArgItem, Icrc7TransferRetItemInner};
 use crate::{state::{escrow::SaleStatus, models::{GetEscrowAccountRet, GetMetadataRet}}, STATE};
@@ -30,8 +31,35 @@ pub async fn book_tokens( arg: BookTokensArg) -> Result<bool, String> {
 }
 #[update(guard = "check_collection_owner")]
 pub async fn accept_sale() -> Result<bool, String> {
-    let    f  =  STATE.with( |f|  f.clone() );
-    let x = f.borrow().accept_sale().await; x
+    STATE.with(|s| s.clone()).borrow_mut().accept_sale().await 
+
+    // let metadata =  res.metadata.map(|f| f.metadata);
+
+    // let escrow = res.escrow;
+
+    // let booked_tokens = escrow.get_booked_tokens();
+
+    // for (investor, quantity) in booked_tokens.iter().filter(|f| f.1 > &0) {
+        
+    //     crate::State::accept_sale_individual_icrc1_transfer(investor.clone(), quantity.clone(), metadata.clone(), escrow.sale_status.clone()).await?;
+
+    //     for _ in 0..quantity.clone() {
+    //         STATE.with_borrow_mut(|f| {
+    //             f.tokens.mint(
+    //                 *investor,
+    //                 Some(Subaccount::from(investor).to_vec()),
+    //             );
+    //             f.metadata.as_mut().map(|f| f.increment_supply());
+    //         } );
+            
+    //     }
+
+    // }
+
+    // STATE.with_borrow_mut(|f| f.escrow.accept_sale());
+
+    // Ok(true)
+
 }
 
 #[update(guard = "check_collection_owner")]

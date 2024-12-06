@@ -296,12 +296,12 @@ pub async fn approve_request(id: u64) -> Result<ListCollection, String> {
       return Ok(ListCollection { id: id, token_canister: collection.config.token_canister.unwrap() , asset_canister: collection.config.asset_canister.unwrap() })
     }
 
-    let wasm = include_bytes!("../../../../wasm/asset/assetstorage.wasm.gz");
+    // let wasm = include_bytes!("../../../../wasm/asset/assetstorage.wasm.gz");
 
-    //  let wasm= match state.asset_wasm {
-    //     Some(wasm) =>wasm,
-    //     None => return Err("Asset wasm not set".into()),
-    // } ;
+     let wasm= match state.asset_wasm {
+        Some(wasm) =>wasm,
+        None => return Err("Asset wasm not set".into()),
+    } ;
 
     let deploy_asset_result = match collection.config.asset_canister {
         Some(p) => p,
@@ -318,7 +318,7 @@ pub async fn approve_request(id: u64) -> Result<ListCollection, String> {
         .ok_or(String::from("Asset Proxy canister not set"))?;
 
     // // Step 4: Grant proxy permissions ///TODO:// Use
-    grant_asset_edit_perms(asset_canister_id, asset_proxy_canister).await?;
+    // grant_asset_edit_perms(asset_canister_id, asset_proxy_canister).await?;
 
     let request = collection.request.clone();
     // // Step 5: Prepare the files for approval
@@ -360,7 +360,11 @@ pub async fn approve_request(id: u64) -> Result<ListCollection, String> {
         );
     }
 
-    let wasm = include_bytes!("../../../../wasm/token/token.wasm.gz").to_vec();
+    // let wasm = include_bytes!("../../../../wasm/token/token.wasm.gz").to_vec();
+    let wasm= match state.token_wasm     {
+        Some(wasm) =>wasm,
+        None => return Err("Asset wasm not set".into()),
+    } ;
 
     let deploy_token_result = deploy_token(wasm, token_metadata).await?;
 

@@ -3,8 +3,10 @@
 
 # dfx deploy token 
 # Specify the path to your Wasm.gz file
-wasm="wasm/token/token.wasm.gz"
-# wasm=".dfx/local/canisters/token/token.wasm.gz"
+# wasm="wasm/token/token.wasm.gz"
+gzip -f -1 ".dfx/local/canisters/token/token.wasm"
+
+wasm=".dfx/local/canisters/token/token.wasm.gz"
 
 
 # Display the hexdump or use the variable as needed

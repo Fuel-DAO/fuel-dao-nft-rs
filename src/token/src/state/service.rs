@@ -10,7 +10,7 @@ use ic_cdk::{api::call::CallResult, caller};
 use ic_ledger_types::{Memo,  Tokens, DEFAULT_SUBACCOUNT};
 use icrc_ledger_types::icrc1::{account::Account, transfer::TransferArg};
 impl State {
-    pub async fn accept_sale(&mut self) -> Result<bool, String> {
+    pub async fn accept_sale(&self) -> Result<bool, String> {
         // Check if the sale is live
         let escrow_store = self.escrow.clone();
         if escrow_store.sale_status != SaleStatus::Live {
@@ -87,16 +87,19 @@ impl State {
 
             // Mint tokens for the investor
             for _ in 0..quantity.clone() {
-                self.tokens.mint(
-                    *investor,
-                    Some(Subaccount::from(investor).to_vec()),
-                );
-                self.metadata.as_mut().map(|f| f.increment_supply());
+                STATE.with_borrow_mut(|f|{
+                    f.tokens.mint(
+                        *investor,
+                        Some(Subaccount::from(investor).to_vec()),
+                    );
+                    f.metadata.as_mut().map(|f| f.increment_supply());
+                } );
+                
             }
         }
 
          // Accept the sale
-        self.escrow.accept_sale();
+        STATE.with_borrow_mut(|f| f.escrow.accept_sale());
 
         Ok(true)
     }
@@ -136,6 +139,52 @@ impl State {
     }
     
 
+    pub async fn get_excess_escrow_balance(&self) -> Result<Vec<Principal>, String> {
+
+        let metadata = self.get_metadata().await?; // Assume this retrieves the Metadata struct
+
+        let escrow_store = self.escrow.clone(); // Assume this retrieves the EscrowStore instance
+
+        if escrow_store.sale_status == SaleStatus::Live {
+            return Err("Sale is live.".to_string());
+        }
+
+        let mut excess = Vec::new();
+
+        for principal in escrow_store.get_participating_investors() {
+
+            let subaccount = Subaccount::from(&principal);
+        let icp_ledger = metadata.token;
+
+        let escrow_balance = EscrowStore::icrc1_balance_of(
+            icp_ledger,
+            Icrc1Account {
+                owner: ic_cdk::id(),
+                subaccount: Some(subaccount.to_vec()),
+            },
+        )
+        .await?;
+
+        let total_invested_count = escrow_store
+            .get_booked_tokens()
+            .get(&principal)
+            .cloned()
+            .unwrap_or_else(|| 0);
+
+        let total_cost = (total_invested_count ) as f64
+            * &(metadata.price);
+
+        if (escrow_balance as f64) > total_cost {
+            excess.push(principal);
+        }
+
+        }
+
+        Ok(excess)
+
+
+    }
+
     /// Should not be anonymous
     pub async fn book_tokens(&self, arg: BookTokensArg) -> Result<bool, String> {
         let principal = caller();
@@ -143,13 +192,15 @@ impl State {
 
         let mut escrow_store = self.escrow.clone(); // Assume this retrieves the EscrowStore instance
 
+        if escrow_store.sale_status != SaleStatus::Live {
+            return Err("Sale not live.".to_string());
+        }
+
         if arg.quantity <= 0 {
             return Err("Quantity should be at least 1.".to_string());
         }
 
-        if escrow_store.sale_status != SaleStatus::Live {
-            return Err("Sale not live.".to_string());
-        }
+        
 
         let subaccount = Subaccount::from(&principal);
         let icp_ledger = metadata.token;
@@ -173,7 +224,7 @@ impl State {
             * &(metadata.price + 10_000.0);
 
         if (escrow_balance as f64) < total_cost {
-            return Err(format!("Invalid balance in escrow. Req quantity: {} Total invested: {total_invested_count} Current balanace: {escrow_balance}, total cost: {total_cost}", arg.quantity));
+            return Err(format!("Invalid balance in escrow. Req quantity: {} Total invested: {total_invested_count} Current balanace: {escrow_balance}, total cost in e8s: {total_cost}", arg.quantity));
         }
 
         ic_cdk::println!("Escrow balance {escrow_balance}, cost {total_cost} ");
@@ -219,6 +270,12 @@ impl State {
     }
 
     pub async fn get_escrow_account(&self) -> Result<GetEscrowAccountRet, String> {
+        let escrow_store = self.escrow.clone(); // Assume this retrieves the EscrowStore instance
+
+        if escrow_store.sale_status != SaleStatus::Live {
+            return Err("Sale not live.".to_string());
+        }
+
         let principal = ic_cdk::api::id();
         let subaccount = Subaccount::from(&ic_cdk::caller());
 

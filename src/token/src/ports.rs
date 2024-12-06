@@ -29,37 +29,17 @@ pub async fn book_tokens( arg: BookTokensArg) -> Result<bool, String> {
     STATE.with(|f|{  f.borrow_mut().escrow.book_tokens(caller(), qunatity.into());  } );
     Ok(res)
 }
+
+#[query]
+pub async fn get_excess_escrow_balance() -> Result<Vec<Principal>, String> {
+  STATE.with_borrow( |f|  f.clone() ).get_excess_escrow_balance().await
+}
+
+
 #[update(guard = "check_collection_owner")]
 pub async fn accept_sale() -> Result<bool, String> {
-    STATE.with(|s| s.clone()).borrow_mut().accept_sale().await 
-
-    // let metadata =  res.metadata.map(|f| f.metadata);
-
-    // let escrow = res.escrow;
-
-    // let booked_tokens = escrow.get_booked_tokens();
-
-    // for (investor, quantity) in booked_tokens.iter().filter(|f| f.1 > &0) {
-        
-    //     crate::State::accept_sale_individual_icrc1_transfer(investor.clone(), quantity.clone(), metadata.clone(), escrow.sale_status.clone()).await?;
-
-    //     for _ in 0..quantity.clone() {
-    //         STATE.with_borrow_mut(|f| {
-    //             f.tokens.mint(
-    //                 *investor,
-    //                 Some(Subaccount::from(investor).to_vec()),
-    //             );
-    //             f.metadata.as_mut().map(|f| f.increment_supply());
-    //         } );
-            
-    //     }
-
-    // }
-
-    // STATE.with_borrow_mut(|f| f.escrow.accept_sale());
-
-    // Ok(true)
-
+    let state = STATE.with(|s| s.borrow().clone());
+    state.accept_sale().await 
 }
 
 #[update(guard = "check_collection_owner")]

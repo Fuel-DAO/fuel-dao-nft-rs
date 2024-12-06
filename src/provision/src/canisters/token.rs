@@ -1,10 +1,10 @@
 use candid::{CandidType, Deserialize, Principal};
-use ic_cdk::api::management_canister::{
-    main::{create_canister, install_code, CreateCanisterArgument, InstallCodeArgument},
+use ic_cdk::api::{call::CallResult, management_canister::{
+    main::{self, create_canister, install_code, start_canister, stop_canister, CanisterIdRecord, CreateCanisterArgument, InstallCodeArgument},
     provisional::CanisterSettings,
-};
-
-use crate::CollectionRequest;
+}};
+use crate::admin::admin::is_controller;
+use crate::{list_collections, CollectionRequest, STATE};
 
 #[derive(CandidType, Deserialize)]
 pub enum TokenCanisterArgs {
@@ -125,3 +125,103 @@ pub async fn deploy_token(wasm: Vec<u8>, request: CollectionMetadata) -> Result<
     // Step 3: Return the created canister ID
     Ok(canister_id)
 }
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+pub async fn upgrade_token_canister(canister_id: Principal) -> Result<bool, String> {
+
+    let wasm =  STATE.with(|f| f.borrow().token_wasm.clone() ).ok_or("Token wasm not set".to_string())?;
+
+    // Step 1: Upgrade  code on the created canister
+    let install_code_arg = InstallCodeArgument {
+        mode: ic_cdk::api::management_canister::main::CanisterInstallMode::Upgrade(None),
+        canister_id,
+        wasm_module: wasm,
+        arg: candid::encode_one(TokenCanisterArgs::Upgrade).unwrap(),
+    };
+    if let Err((e, err_msg)) = upgrade_canister_util(install_code_arg).await {
+        return Err(format!("Failed to upgrade code into Token wasm:  {} {e:?} {}",canister_id.to_text() ,err_msg));
+    }
+
+    Ok(true)
+}
+
+
+#[ic_cdk_macros::update(guard = "is_controller")]
+pub async fn upgrade_token_canisters() -> Result<bool, String> {
+
+    let wasm =  STATE.with(|f| f.borrow().token_wasm.clone() ).ok_or("Token wasm not set".to_string())?;
+
+    let canisters: Vec<Principal> = list_collections().iter().map(|f| f.token_canister).collect();
+
+    for canister_id in canisters {
+
+         // Step 1: Upgrade  code on the created canister
+    let install_code_arg = InstallCodeArgument {
+        mode: ic_cdk::api::management_canister::main::CanisterInstallMode::Upgrade(None),
+        canister_id,
+        wasm_module: wasm.clone(),
+        arg: candid::encode_one(TokenCanisterArgs::Upgrade).unwrap(),
+    };
+
+    if let Err((e, err_msg)) = upgrade_canister_util(install_code_arg).await {
+        return Err(format!("Failed to upgrade code into Token wasm for:  {} {e:?} {}",canister_id.to_text() ,err_msg));
+    }
+
+    }
+    Ok(true)
+}
+
+
+pub async fn upgrade_canister_util(arg: InstallCodeArgument) -> CallResult<()> {
+    // update_wasm(arg.canister_id, arg.wasm_module).await
+    //  ic_cdk::api::call::call(
+    //     Principal::management_canister(),
+    //     "install_code",
+    //     (arg,),
+    // )
+    // .await
+
+    let canister_id = arg.canister_id;
+    stop_canister(CanisterIdRecord { canister_id }).await?;
+    let install_code_result = main::install_code(arg).await;
+    start_canister(CanisterIdRecord { canister_id }).await?;
+    install_code_result
+}
+
+// async fn update_wasm(canister_id: Principal, wasm: Vec<u8>) -> CallResult<()> {
+//     #[derive(CandidType, serde::Serialize, Deserialize)]
+//     enum InstallMode {
+//         #[serde(rename = "install")]
+//         Install,
+//         #[serde(rename = "reinstall")]
+//         Reinstall,
+//         #[serde(rename = "upgrade")]
+//         Upgrade,
+//     }
+
+//     #[derive(CandidType, serde::Serialize, Deserialize)]
+//     struct CanisterInstall {
+//         mode: InstallMode,
+//         canister_id: Principal,
+//         wasm_module: Vec<u8>,
+//         arg: Vec<u8>,
+//     }
+
+   
+
+//     let install_arg = CanisterInstall {
+//         canister_id: canister_id,
+//         mode: InstallMode::Upgrade,
+//         wasm_module: wasm,
+//         arg: vec![],
+//     };
+
+//     let (_,): ((),) = ic_cdk::api::call::call(
+//         Principal::management_canister(),
+//         "install_code",
+//         (install_arg,),
+//     )
+//     .await?;
+
+//     CallResult::Ok(())
+// }

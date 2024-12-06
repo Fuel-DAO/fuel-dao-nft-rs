@@ -119,7 +119,8 @@ type MetadataValue = variant { Nat : nat; Text : text };
 type Result = variant { Ok : bool; Err : text };
 type Result_1 = variant { Ok : nat; Err : text };
 type Result_2 = variant { Ok : GetEscrowAccountRet; Err : text };
-type Result_3 = variant { Ok : GetMetadataRet; Err : text };
+type Result_3 = variant { Ok : vec principal; Err : text };
+type Result_4 = variant { Ok : GetMetadataRet; Err : text };
 type SaleStatus = variant { Live; Rejected; Accepted };
 type SupportedStandard = record { url : text; name : text };
 type TransferArg = record {
@@ -169,7 +170,8 @@ service : (CanisterArgs) -> {
   change_ownership : (principal) -> (Result_1);
   get_booked_tokens : (opt principal) -> (nat) query;
   get_escrow_account : () -> (Result_2) query;
-  get_metadata : () -> (Result_3) query;
+  get_excess_escrow_balance : () -> (Result_3) query;
+  get_metadata : () -> (Result_4) query;
   get_participating_investors : () -> (vec principal) query;
   get_sale_status : () -> (SaleStatus) query;
   get_total_booked_tokens : () -> (nat) query;

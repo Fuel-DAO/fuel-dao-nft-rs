@@ -1,10 +1,5 @@
 {
   "canisters": {
-    "fueldao": {
-      "candid": "src/fueldao/can.did",
-      "package": "fueldao",
-      "type": "rust"
-    },
     "asset_proxy": {
       "candid": "src/asset_proxy/can.did",
       "package": "asset_proxy",

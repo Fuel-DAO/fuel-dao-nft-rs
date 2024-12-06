@@ -8,7 +8,7 @@ function generate_did() {
 }
 
 # The list of canisters of your project
-CANISTERS=fueldao,provision,asset_proxy,token
+CANISTERS=provision,asset_proxy,token
 
 for canister in $(echo $CANISTERS | sed "s/,/ /g")
 do

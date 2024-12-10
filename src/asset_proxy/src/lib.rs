@@ -1,14 +1,19 @@
-use std::cell::RefCell;
+use crate::types::*;
 use candid::Principal;
 use ic_cdk::{post_upgrade, pre_upgrade, storage};
-use crate::types::*;
 use state::State;
-mod state;
+use std::cell::RefCell;
 mod admin;
-mod types;
-mod canisters;
 mod asset;
-
+mod asset_certification;
+mod canisters;
+mod evidence;
+mod state;
+mod state_machine;
+mod store_state;
+mod store_types;
+mod types;
+mod url_decode;
 thread_local! {
     static STATE: RefCell<State> = RefCell::new(Default::default());
 }
